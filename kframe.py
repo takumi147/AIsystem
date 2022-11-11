@@ -40,12 +40,12 @@ def compute_iou(b1, b2):
         intersect_area = (top_line - bottom_line) * (right_line - left_line)
         return (intersect_area/(sum_area - intersect_area))
 
-def get_box(file):
+def get_tru_boxes(file):
     """
     extract box information from txt
     :param file: "xxx.txt"
-    :return [[y0, x0, y1, x1],], which reflect boxes's 
-                bottom line, left line, top line, right line.
+    :return [[y0, x0, y1, x1, ],]
+            which reflect boxes's bottom line, left line, top line, right line.
     """
     # read txt and split different boxes
     txt = open(file, 'r').read().split('\n')
@@ -64,10 +64,36 @@ def get_box(file):
             top_line = float(box[2]) + float(box[4][:-2])/2
             right_line = float(box[1]) + float(box[3])/2
             
-            if len(box) == 6:
-                boxes.append([bottom_line, left_line, top_line, right_line, box[-1]])
-            else:
-                boxes.append([bottom_line, left_line, top_line, right_line])
+            boxes.append([bottom_line, left_line, top_line, right_line])
+
+    return boxes
+
+def get_pre_boxes(file):
+    """
+    extract box information from txt
+    :param file: "xxx.txt"
+    :return [[y0, x0, y1, x1, c],]
+            which reflect boxes's bottom line, left line, top line, right line.
+    """
+    # read txt and split different boxes
+    txt = open(file, 'r').read().split('\n')
+    
+    # create the boxes list
+    boxes = []
+
+    # add boxes information into list
+    # pre_txt: [n, x, y, w, h, c] to [bottom line, left line, top line, right line, c]
+    # tru_txt: [n, x, y, w, h] to [bottom line, left line, top line, right line]
+    for box in txt:
+        if box:
+            box = box.split(' ')
+            bottom_line = float(box[2]) - float(box[4][:-2])/2
+            left_line = float(box[1]) - float(box[3])/2
+            top_line = float(box[2]) + float(box[4][:-2])/2
+            right_line = float(box[1]) + float(box[3])/2
+            
+            boxes.append([bottom_line, left_line, top_line, right_line, box[-1]])
+
     return boxes
 
 def get_iou(tru_txt, pre_txt, conf_thre):
@@ -77,17 +103,18 @@ def get_iou(tru_txt, pre_txt, conf_thre):
     :return average iou
     """
 
-    box1 = get_box(tru_txt)
-    box2 = get_box(pre_txt)
-    iou = 0
+    t_boxes = get_tru_boxes(tru_txt)
+    p_boxes = get_pre_boxes(pre_txt)
+    ious = []
 
     # iterate every box in two file and compute all their iou
-    for i in box1:
-        for j in box2:
-            if j[-1] >= conf_thre:
-                iou += compute_iou(i, j)
+    for t_box in t_boxes:
+        for p_box in p_boxes:
+            if p_box[-1] >= conf_thre:
+                iou = compute_iou(t_box, p_box)
+                ious.append(iou)
     
-    return (iou / (len(box1) * len(box2)))
+    return max(ious)
 
 
 def f_score(tp, tn, fp, fn):
