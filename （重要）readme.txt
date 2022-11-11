@@ -1,0 +1,7 @@
+需要清楚使用k-frame的条件：
+1. detect对象为整个视频。
+2. true label为整个视频每一帧的label。
+
+这是因为k-flame是对每一帧进行整合，再计算tp的，所以必须是整个视频。
+
+如果是一个视频中打乱进行train和test的话，无法使用k-frame，使用普通的f数计算即可。
