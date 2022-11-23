@@ -3,8 +3,8 @@ from result_to_excel import write_excel
 
 
 if __name__ == "__main__":
-    file_pre = 'place3_whitecane01.mp4'
-    file_num = 1487  # the number of truth flames  
+    file_pre = 'place1_whitecane01.mp4'
+    file_num = 878  # the number of truth flames  
     results = []
     for k in (2, 4, 8, 16):
         a_start = int(k/2)

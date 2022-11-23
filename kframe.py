@@ -92,7 +92,7 @@ def get_pre_boxes(file):
             top_line = float(box[2]) + float(box[4][:-2])/2
             right_line = float(box[1]) + float(box[3])/2
             
-            boxes.append([bottom_line, left_line, top_line, right_line, box[-1]])
+            boxes.append([bottom_line, left_line, top_line, right_line, float(box[-1])])
 
     return boxes
 
@@ -114,7 +114,7 @@ def get_iou(tru_txt, pre_txt, conf_thre):
                 iou = compute_iou(t_box, p_box)
                 ious.append(iou)
     
-    return max(ious)
+    return max(ious) if ious else 0
 
 
 def f_score(tp, tn, fp, fn):
