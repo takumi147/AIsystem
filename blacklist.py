@@ -49,18 +49,37 @@ def in_blacklists(blacklists, xywh):
             return True
     return False
 
-def my_xywh2xyxy(x):
+def in_tmpbl(box, xywh):
+    # if xywh in tmp, return True
+    # box: [xywhc]
+    if not box:
+        return False
+    xyxy = my_xywh2xyxy(xywh)
+    box = my_xywh2xyxy(box[:-1])
+    if box[0] <= xyxy[0] and box[1] >= xyxy[1]\
+        and box[2] >= xyxy[2] and box[3] <= xyxy[3]:
+        return True
+    return False
+
+def my_xywh2xyxy(xywh):
     # list xywh to xyxy
-    y = [0] * 4
-    y[0] = x[0] - x[2]/2
-    y[1] = x[1] + x[3]/2
-    y[2] = x[0] + x[2]/2
-    y[3] = x[1] - x[3]/2
-    return y
+    xyxy = [0] * 4
+    xyxy[0] = xywh[0] - xywh[2]/2
+    xyxy[1] = xywh[1] + xywh[3]/2
+    xyxy[2] = xywh[0] + xywh[2]/2
+    xyxy[3] = xywh[1] - xywh[3]/2
+    return xyxy
 
 def enlarge_box(xywh, scale=1.2):
     # elarge box， xywh is [x,y,w,h]
     return [xywh[0], xywh[1], xywh[2]*scale, xywh[3]*scale]
+
+def refreshbl(bl, tmpbl, size, scale):
+    # replace bl with tmpbl, scale should be between 0~1
+    bl = [box[:-1] for box in tmpbl if box[-1] >= int(size*scale)]
+    tmpbl = []
+    return bl, tmpbl
+
 
 if __name__ == '__main__':
     # pred = [torch.tensor([[3.71641e+02, 3.61843e+01, 5.70891e+02, 3.73188e+02, 8.79886e-01, 0.00000e+00],

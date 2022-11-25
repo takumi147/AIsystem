@@ -46,7 +46,7 @@ from utils.general import (LOGGER, check_file, check_img_size, check_imshow, che
                            increment_path, non_max_suppression, print_args, scale_coords, strip_optimizer, xyxy2xywh)
 from utils.plots import Annotator, colors, save_one_box
 from utils.torch_utils import select_device, time_sync
-from blacklist import in_blacklists, enlarge_box
+from blacklist import in_blacklists, enlarge_box, in_tmpbl, refreshbl
 
 @torch.no_grad()
 def run(
@@ -113,8 +113,10 @@ def run(
     # default bl paramaters
     bl = []
     count = 0
-    tmpbl_add = []
+    tmpbl = []
     log = 'test\n'
+    scale = 0.3
+    size = 10
     for path, im, im0s, vid_cap, s in dataset:
         t1 = time_sync()
         im = torch.from_numpy(im).to(device)
@@ -142,10 +144,9 @@ def run(
         for i, det in enumerate(pred):  # per image
             # refresh the black list per 12 flames
             count += 1
-            if count % 15 == 0:
-                log += f"count={count}\nbl={len(bl)}\ntmpbl_add={len(tmpbl_add)}\n\n\n"
-                bl = tmpbl_add
-                tmpbl_add = []
+            if count % size == 0:
+                log += f"count={count}\nbl={len(bl)}\ntmpbl={len(tmpbl)}\n\n\n"
+                bl, tmpbl = refreshbl(bl, tmpbl, size, scale)
 
             seen += 1
             if webcam:  # batch_size >= 1
@@ -174,9 +175,13 @@ def run(
                 for *xyxy, conf, cls in reversed(det):
                     xywh = (xyxy2xywh(torch.tensor(xyxy).view(1, 4)) / gn).view(-1).tolist()
 
-                    # refresh tmpbl_add
-                    if not in_blacklists(tmpbl_add, xywh):
-                        tmpbl_add += [enlarge_box(xywh)]
+                    # refresh tmpb
+                    for box in tmpbl:
+                        if in_tmpbl(box, xywh):
+                            box[-1] += 1
+                            break
+                    else:
+                        tmpbl += [enlarge_box(xywh)+[1]]
                     # if box in blacklists, neglect this box
                     if in_blacklists(bl, xywh):
                         continue
