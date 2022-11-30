@@ -77,7 +77,7 @@ def enlarge_box(xywh, scale=1.2):
 def refreshbl(bl, tmpbl, size, scale):
     # replace bl with tmpbl, scale should be between 0~1
     bl = [box[:-1] for box in tmpbl if box[-1] >= int(size*scale)]
-    tmpbl = []
+    tmpbl = [box + [1] for box in bl]
     return bl, tmpbl
 
 
