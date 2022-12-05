@@ -4,7 +4,7 @@ from result_to_excel import write_excel
 
 if __name__ == "__main__":
     file_pre = 'place3_whitecane01.mp4'
-    file_num = 290  # the number of truth flames  
+    file_num = 32  # the number of truth flames  
     results = []
     print('程序开始！记得修改文件前缀和label数量！')
     for k in (2, 4, 8, 16):

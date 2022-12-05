@@ -51,7 +51,7 @@ def in_blacklists(blacklists, xywh):
 
 def in_tmpbl(box, xywh):
     # if xywh in tmp, return True
-    # box: [xywhc]
+    # box: [x,y,w,h,count]
     if not box:
         return False
     xyxy = my_xywh2xyxy(xywh)
@@ -79,6 +79,9 @@ def refreshbl(bl, tmpbl, size, scale):
     bl = [box[:-1] for box in tmpbl if box[-1] >= int(size*scale)]
     tmpbl = [box + [1] for box in bl]
     return bl, tmpbl
+
+def my_yxyxc2xywh(yxyxc):
+    return [yxyxc[1], yxyxc[0], yxyxc[3]-yxyxc[1], yxyxc[2]-yxyxc[0]]
 
 
 if __name__ == '__main__':
