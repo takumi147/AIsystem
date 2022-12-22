@@ -7,11 +7,15 @@ if __name__ == "__main__":
     file_num = 290  # the number of truth flames  
     results = []
     print('程序开始！记得修改文件前缀和label数量！')
+    # 把除了k=1的计算结果全部丢进去
     for k in (2, 4, 8, 16):
-        a_start = int(k/2)
+        a_start = 1
         for a in range(a_start, k+1):
-            for b in range(8, 17):
+            for b in range(1, 17):
                 result = [k, a, b, calculate_f_score(file_pre, file_num, unit_size=k, a=a/k, b=b/16, conf_thre=0.5, iou_thre=0.8)]
                 results.append(result)
+    # 把k=1的计算结果丢进去,此时a,b也是1。
+    results.append([1, 1, 1, calculate_f_score(file_pre, file_num, unit_size=1, a=1, b=1, conf_thre=0.5, iou_thre=0.8)])
+    # 写execl
     write_excel(results)
     print('程序结束！')
