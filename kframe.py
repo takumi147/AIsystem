@@ -126,7 +126,8 @@ def f_score(tp, tn, fp, fn):
     return (2 * precision * recall) / (precision + recall) if (precision + recall) != 0 else 0
 
 
-def calculate_f_score(file_pre='', file_num=0, unit_size=16, a=0.5, b=0.5, conf_thre=0.8, iou_thre=0.5):
+def calculate_kflame(tru_txt_path, pre_txt_path, file_pre, file_num, unit_size, a, b, 
+        conf_thre=0.8, iou_thre=0.5):
     """
     use k-frame to compute TP, TN, FP, FN
     :param  file_pre: ep."place1_whitecane01.mp4_5.txt" pre is "place1_whitecane01.mp4"
@@ -144,8 +145,8 @@ def calculate_f_score(file_pre='', file_num=0, unit_size=16, a=0.5, b=0.5, conf_
     fp = 0
     fn = 0
     unit_num = file_num // unit_size
-    folder_pre_name = 'pre'
-    folder_tru_name = 'tru'
+    folder_pre_name = pre_txt_path
+    folder_tru_name = tru_txt_path
 
     # use flame_truth_num and flame_pre_num to calculate the tp, tn, fp, fn.
     for i in range(unit_num+1):
@@ -155,16 +156,25 @@ def calculate_f_score(file_pre='', file_num=0, unit_size=16, a=0.5, b=0.5, conf_
         
         # iterate an unit, and judge which status it is.
         for j in range(1, unit_size+1):
-            txtname = file_pre + '_{}.txt'.format(j + i * unit_size)
+            if (j + i * unit_size) > 99:
+                txtname = file_pre + '_{}.txt'.format(j + i * unit_size)
+            elif 10 <= (j + i * unit_size) <= 99:
+                txtname = file_pre + '_0{}.txt'.format(j + i * unit_size)
+            else:
+                txtname = file_pre + '_00{}.txt'.format(j + i * unit_size)
             pre_txt_path = os.path.join(folder_pre_name, txtname)
             tru_txt_path = os.path.join(folder_tru_name, txtname)
 
             if os.path.exists(tru_txt_path):
                 flame_truth_num += 1
-                if os.path.exists(pre_txt_path):
-                    iou = get_iou(tru_txt_path, pre_txt_path, conf_thre)
-                    if iou >= iou_thre:
+            if os.path.exists(pre_txt_path):
+                    # iou = get_iou(tru_txt_path, pre_txt_path, conf_thre)
+                txt = open(pre_txt_path,'r').read().split('\n')
+                for box in txt:
+                    conf = float(box[-1]) if len(box) > 0 else 0
+                    if conf >= conf_thre:
                         flame_pre_num += 1
+                        break
 
         # calculate the tp, tn, fp, fn.
         if flame_truth_num >= (unit_size * a) and flame_pre_num >= (unit_size * b):
@@ -181,10 +191,55 @@ def calculate_f_score(file_pre='', file_num=0, unit_size=16, a=0.5, b=0.5, conf_
 
     return f_score(tp, tn, fp, fn)
 
+def calculate_fscore(tru_txt_path, pre_txt_path, file_pre, file_num, conf_thre=0.8, iou_thre=0.5):
+    """
 
+    """
+    # default some varities.
+    tp = 0
+    tn = 0
+    fp = 0
+    fn = 0
+    folder_pre_name = pre_txt_path
+    folder_tru_name = tru_txt_path
+
+
+    for j in range(1, file_num):
+        t = 0
+        p = 0
+        if j > 99:
+            txtname = file_pre + '_{}.txt'.format(j)
+        elif 10 <= j <= 99:
+            txtname = file_pre + '_0{}.txt'.format(j)
+        else:
+            txtname = file_pre + '_00{}.txt'.format(j)
+        pre_txt_path = os.path.join(folder_pre_name, txtname)
+        tru_txt_path = os.path.join(folder_tru_name, txtname)
+
+        if os.path.exists(tru_txt_path):
+            t = 1
+        if os.path.exists(pre_txt_path):
+            try:
+                iou = get_iou(tru_txt_path, pre_txt_path, conf_thre)
+                if iou > iou_thre:
+                    p = 1
+            except:
+                p = 0
+
+        # calculate the tp, tn, fp, fn.
+        if p and t:
+            tp += 1
+        elif p and not t:
+            fp += 1
+        elif not p and t:
+            fn += 1       
+        elif not p and not t:
+            tn += 1
+
+    return f_score(tp, tn, fp, fn)
 
 if __name__ == '__main__':
     file_pre = 'place1_whitecane01.mp4'
     file_num = 379
-    print(calculate_f_score(file_pre, file_num, unit_size=16, a=0.5, b=0.5, conf_thre=0.8, iou_thre=0.5))
+    print(calculate_kflame(file_pre, file_num, unit_size=16, a=0.5, b=0.5, conf_thre=0.8, iou_thre=0.5))
                 
