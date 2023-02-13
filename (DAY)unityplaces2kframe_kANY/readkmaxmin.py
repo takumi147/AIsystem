@@ -12,5 +12,5 @@ for file in os.listdir(os.getcwd()):
         for j in range(2, sheet.nrows):
             maxv = max(maxv, round(float(sheet.cell(j, i).value), 3))
             minv = min(minv, round(float(sheet.cell(j, i).value), 3))
-    print(file, ',', 'k=1', round(float(sheet.cell(1, 17).value), 3), 'max:', maxv, 'min:', minv)
+    print(file, ',', 'k=1:', round(float(sheet.cell(1, 17).value), 3), 'max:', maxv, 'min:', minv)
 

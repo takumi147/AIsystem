@@ -32,9 +32,11 @@ def main(conf_thre, iou_thre):
                 print(fr'k:{k},a:{a}/{k},b:{b}/16, over')
 
     # 计算不适用kframe的评价结果，此时k，a，b都是1
-    for i in range(1,24):
-        tru_img_path = fr'C:\Users\李志卿\datasets\place{i}\images'
-        tru_txt_path = fr'C:\Users\李志卿\datasets\place{i}\labels'
+    for i in range(1,19):
+        if i in (5, 15):
+            continue
+        tru_img_path = fr'C:\Users\李志卿\datasets\night{i}\test\images'
+        tru_txt_path = fr'C:\Users\李志卿\datasets\place{i}\test\labels'
         pre_txt_path = fr'C:\Users\李志卿\myyolov5\runs\detect\exp{i}\labels'
         video_inf = getvideo_nameandflamenum(tru_img_path)
         for video, flamenum in video_inf.items():
@@ -54,9 +56,9 @@ def main(conf_thre, iou_thre):
 
 
 if __name__ == '__main__':
-    for conf_thre in np.arange(0.1, 1, 0.1):
+    for conf_thre in np.arange(0.1, 0.2, 0.1):
         conf_thre = round(conf_thre, 1)
-        for iou_thre in np.arange(0.1, 1, 0.1):
+        for iou_thre in np.arange(0.1, 0.2, 0.1):
             iou_thre = round(iou_thre, 1)
             print(f'start c:{conf_thre}_iou:{iou_thre}')
             main(conf_thre, iou_thre)
