@@ -18,7 +18,7 @@ import cv2
 import sys, os
 import time
 
-frameFrequency=1 # 抽出時のフレーム間隔。ここでは、1フレームごとに抽出
+frameFrequency=15 # 抽出時のフレーム間隔。ここでは、1フレームごとに抽出
 
 RootPath = os.getcwd()
 for root,dirs,files in os.walk(RootPath):

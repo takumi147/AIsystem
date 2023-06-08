@@ -5,10 +5,9 @@ import os
 def getvideo_nameandflamenum(tru_img_path):
     """
     return: video_inf, like {'place1_whitecane01.mp4':379, }
+    \n找到该视频最后一帧的序号，即需要的file_num。通过这个来确定视频一共有多少帧。
     """
     video_inf = {}
-
-    # 找到该视频最后一帧的序号，即需要的file_num。通过这个来确定视频一共有多少帧。
     for file in os.listdir(tru_img_path):
         video_inf[file.split('mp4_')[0] + 'mp4'] = int(file.split('mp4_')[1][:3])
     
@@ -55,10 +54,13 @@ def calculate_tpfptnfn_kframe(tru_txt_path, pre_txt_path, file_pre, file_num, un
 
             if os.path.exists(tru_txt_path):
                 flame_truth_num += 1
-            if os.path.exists(tru_txt_path) and os.path.exists(pre_txt_path):
-                iou = get_iou(tru_txt_path, pre_txt_path, conf_thre)
-                if iou >= iou_thre:
-                    flame_pre_num += 1
+            if os.path.exists(pre_txt_path):
+                pre_boxes = get_pre_boxes(pre_txt_path)
+                for box in pre_boxes:
+                    c = box[-1]
+                    if c >= conf_thre:
+                        flame_pre_num += 1
+                        break
 
         # calculate the tp, tn, fp, fn.
         if flame_truth_num >= (unit_size * a) and flame_pre_num >= (unit_size * b):
@@ -142,6 +144,7 @@ def get_tru_boxes(file):
 def get_pre_boxes(file):
     """
     extract box information from txt
+    :file: file path
     :param file: "xxx.txt"
     :return [[y0, x0, y1, x1, c],]
             which reflect boxes's bottom line, left line, top line, right line.
@@ -248,18 +251,21 @@ def write_excel(k, results, file_pre):
     # default format 
     book = xlwt.Workbook(encoding='utf-8',style_compression=0)
     sheet = book.add_sheet('k-frame result',cell_overwrite_ok=True)
-    row0 = ('', 'β', f'1/{k}', '2/16', '3/16', '4/16', '5/16', '6/16', '7/16', '8/16', '9/16', '10/16', '11/16', '12/16', '13/16', '14/16', '15/16', '1')
+    row0 = ['', 'β']
+    row0_1 = [f'{i}' for i in range(1, k+1)]
     col0 = [f'k={k}']
     col1 = ['a={}'.format(i) for i in range(1, k+1)]
 
     # write default format
     for i in range(len(row0)):
         sheet.write(0, i, row0[i])
+    for i in range(len(row0_1)):
+        sheet.write(0, len(row0) + i, row0_1[i])
     sheet.write(1, 0, col0[0])
     for i in range(1, k+1):
         sheet.write(i, 1, col1[i-1])
 
-    # # create a dic to give results the position(row) to write, (k, a): row
+    # create a dic to give results the position(row) to write, dic = {(k, a): row,}
     r = 1
     dic = {}
     for i in (k,):
@@ -269,12 +275,12 @@ def write_excel(k, results, file_pre):
 
     # # write k-frame results
     for result in results:
-        k = result[0]
-        a = result[1]
-        sheet.write(dic[(k, a)], result[2]+1, result[3])
+        resk = result[0]
+        resa = result[1]
+        sheet.write(dic[(resk, resa)], result[2]+1, result[3])
     
     # save excel file
-    name = f'k-frame_{file_pre}.xls'
+    name = f'(Dayk{k})k-frame_{file_pre}.xls'
     book.save(fr'result/{name}')
     print(name,'已保存。')
 
