@@ -2,6 +2,9 @@ import os
 import xlwt
 import os
 
+from blacklist import in_sols, in_tmpsol, refreshsols, enlarge_box
+
+
 def getvideo_nameandflamenum(tru_img_path):
     """
     return: video_inf, like {'place1_whitecane01.mp4':379, }
@@ -14,16 +17,15 @@ def getvideo_nameandflamenum(tru_img_path):
     return video_inf
 
 def calculate_tpfptnfn_kframe(tru_txt_path, pre_txt_path, file_pre, file_num, unit_size, a, b, 
-        conf_thre=0.8, iou_thre=0.5):
+        conf_thre=0.8, size=15, seta=0.5):
     """
-    use k-frame to compute TP, TN, FP, FN
+    use k-frame method to compute TP, TN, FP, FN
     :param  file_pre: ep."place1_whitecane01.mp4_5.txt" pre is "place1_whitecane01.mp4"
             unit_size: how many flame compose an unit, = k.
             file_num: how many flame we have.
-            a: the error modulus to judge true, false.
-            b: the error modulus to judge positive, negative.
+            a: the error modulus to judge true, false. from 1/k to 1.
+            b: the error modulus to judge positive, negative. from 1/k to 1.
             conf_thre: confidence thread to abandon unreliable flame.
-            iou_thre: iou thread to abandon unreliable flame.
     :return f-score
     """
     # default some varities.
@@ -35,14 +37,24 @@ def calculate_tpfptnfn_kframe(tru_txt_path, pre_txt_path, file_pre, file_num, un
     folder_pre_name = pre_txt_path
     folder_tru_name = tru_txt_path
 
+    # sol parameters.
+    sols = []
+    count = 0
+    tmpsols = []
+
+
+    # for each unit.
     # use flame_truth_num and flame_pre_num to calculate the tp, tn, fp, fn.
     for i in range(unit_num+1):
+
         # count the number of flame of predition and truth.
         flame_truth_num = 0
         flame_pre_num = 0
         
-        # iterate an unit, and classify which status it is.
-        for j in range(1, unit_size+1):
+        # for each flame.
+        # iterate an unit, and classify which status(tp, tn, fp, fn) it is.
+        for j in range(0, unit_size):
+            # find the label txt. 
             if (j + i * unit_size) > 99:
                 txtname = file_pre + '_{}.txt'.format(j + i * unit_size)
             elif 10 <= (j + i * unit_size) <= 99:
@@ -52,15 +64,53 @@ def calculate_tpfptnfn_kframe(tru_txt_path, pre_txt_path, file_pre, file_num, un
             pre_txt_path = os.path.join(folder_pre_name, txtname)
             tru_txt_path = os.path.join(folder_tru_name, txtname)
 
+            count += 1
+            # refresh sols.
+            if count % size == 0:
+                count = 0
+                sols, tmpsols = refreshsols(sols, tmpsols, size, seta)
+
+            # labels after sol filters.
+            new_labels = '' 
+
+            # this flame actuallty has whitecane or not.
             if os.path.exists(tru_txt_path):
                 flame_truth_num += 1
+
+            pred = 0
+            # count the flames in which whitecane is detected 
             if os.path.exists(pre_txt_path):
                 pre_boxes = get_pre_boxes(pre_txt_path)
                 for box in pre_boxes:
                     c = box[-1]
+                    xywh = box[1:-1]
+                    if c >= conf_thre and not in_sols(sols, xywh):
+                        pred = 1
+                        box = [str(i) for i in box]
+                        new_labels += ' '.join(box) 
+                        new_labels += '\n'
+
+                # save labels after sols filter.
+                # with open('./sol_label//' + txtname, 'w+') as t:
+                #     t.write(new_labels)
+
+                # this flame detected whitecane or not
+                if pred:
+                    flame_pre_num += 1
+
+                # refresh temporary sol.
+                for box in pre_boxes:
+                    c = box[-1]
+                    xywh = box[1:-1]
                     if c >= conf_thre:
-                        flame_pre_num += 1
-                        break
+                        for tmpsol in tmpsols:
+                            if in_tmpsol(tmpsol, xywh):
+                                tmpsol[-1] += 1
+                                break
+                        else:
+                            tmpsols += [enlarge_box(xywh) + [1]]
+
+
 
         # calculate the tp, tn, fp, fn.
         if flame_truth_num >= (unit_size * a) and flame_pre_num >= (unit_size * b):
@@ -146,8 +196,7 @@ def get_pre_boxes(file):
     extract box information from txt
     :file: file path
     :param file: "xxx.txt"
-    :return [[y0, x0, y1, x1, c],]
-            which reflect boxes's bottom line, left line, top line, right line.
+    :return [[cxywhc],]
     """
     # read txt and split different boxes
     txt = open(file, 'r').read().split('\n')
@@ -161,12 +210,8 @@ def get_pre_boxes(file):
     for box in txt:
         if box:
             box = box.split(' ')
-            bottom_line = float(box[2]) - float(box[4][:-2])/2
-            left_line = float(box[1]) - float(box[3])/2
-            top_line = float(box[2]) + float(box[4][:-2])/2
-            right_line = float(box[1]) + float(box[3])/2
-            
-            boxes.append([bottom_line, left_line, top_line, right_line, float(box[-1])])
+            box = [float(i) for i in box]
+            boxes.append(box)
 
     return boxes
 
@@ -280,7 +325,7 @@ def write_excel(k, results, file_pre):
         sheet.write(dic[(resk, resa)], result[2]+1, result[3])
     
     # save excel file
-    name = f'(Dayk{k})k-frame_{file_pre}.xls'
+    name = f'(Nightk{k})k-frame_{file_pre}.xls'
     book.save(fr'result/{name}')
     print(name,'已保存。')
 

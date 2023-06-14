@@ -35,12 +35,12 @@ def rewrite(path):
 
     
 print('program start')
-for i in range(1, 20):
-    if i in (5, 15):
-        continue
-    path1 = fr'D:\夜の白杖データ\img\night{i}\test\labels'
-    path2 = fr'D:\夜の白杖データ\img\night{i}\test\images'
-    rewrite(path1)
-    rewrite(path2)
+# for i in range(1, 20):
+#     if i in (5, 15):
+#         continue
+#     path1 = fr'D:\夜の白杖データ\img\night{i}\test\labels'
+#     path2 = fr'D:\夜の白杖データ\img\night{i}\test\images'
+rewrite(os.getcwd())
+# rewrite(path2)
     
 print('program end')
